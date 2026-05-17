@@ -1,0 +1,15 @@
+[project]
+name = "depth_project"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "torch==2.0.1",
+    "torchvision==0.15.2",
+    "onnx==1.14.0",
+    "onnxsim==0.4.33",
+    "datasets",
+    "numpy",
+    "h5py",
+]
