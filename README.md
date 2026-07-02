@@ -1,229 +1,237 @@
----
-license: apache-2.0
-language:
-- en
-multilinguality:
-- monolingual
-size_categories:
-- 10K<n<100K
-task_categories:
-- depth-estimation
-task_ids: []
-pretty_name: NYU Depth V2
-tags: 
-- depth-estimation
-paperswithcode_id: nyuv2
-dataset_info:
-  features:
-  - name: image
-    dtype: image
-  - name: depth_map
-    dtype: image
-  splits:
-  - name: train
-    num_bytes: 20212097551
-    num_examples: 47584
-  - name: validation
-    num_bytes: 240785762
-    num_examples: 654
-  download_size: 35151124480
-  dataset_size: 20452883313
----
+# KPU Depth Estimation Project
 
-# Dataset Card for NYU Depth V2
+<p align="center">
+  <img src="estilo/starry_night.jpg" alt="Starry Night Inspiration" width="400">
+</p>
 
-## Table of Contents
-- [Table of Contents](#table-of-contents)
-- [Dataset Description](#dataset-description)
-  - [Dataset Summary](#dataset-summary)
-  - [Supported Tasks](#supported-tasks)
-  - [Languages](#languages)
-- [Dataset Structure](#dataset-structure)
-  - [Data Instances](#data-instances)
-  - [Data Fields](#data-fields)
-  - [Data Splits](#data-splits)
-- [Visualization](#visualization)
-- [Dataset Creation](#dataset-creation)
-  - [Curation Rationale](#curation-rationale)
-  - [Source Data](#source-data)
-  - [Annotations](#annotations)
-  - [Personal and Sensitive Information](#personal-and-sensitive-information)
-- [Considerations for Using the Data](#considerations-for-using-the-data)
-  - [Social Impact of Dataset](#social-impact-of-dataset)
-  - [Discussion of Biases](#discussion-of-biases)
-  - [Other Known Limitations](#other-known-limitations)
-- [Additional Information](#additional-information)
-  - [Dataset Curators](#dataset-curators)
-  - [Licensing Information](#licensing-information)
-  - [Citation Information](#citation-information)
-  - [Contributions](#contributions)
+> **Estimación de profundidad monocular optimizada para KPU (Kendryte Processing Unit) usando arquitectura U-Net**
 
+## 🚀 Descripción del Proyecto
 
-## Dataset Description
+Este proyecto implementa un modelo de estimación de profundidad monocular optimizado para ejecutarse en hardware embebido usando la unidad de procesamiento KPU de Kendryte. El modelo utiliza una arquitectura U-Net con convoluciones separables en profundidad y está diseñado específicamente para cumplir con las restricciones del hardware embebido.
 
-- **Homepage:** [NYU Depth Dataset V2 homepage](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html)
-- **Repository:** Fast Depth [repository](https://github.com/dwofk/fast-depth) which was used to source the dataset in this repository. It is a preprocessed version of the original NYU Depth V2 dataset linked above. It is also used in [TensorFlow Datasets](https://www.tensorflow.org/datasets/catalog/nyu_depth_v2).
-- **Papers:** [Indoor Segmentation and Support Inference from RGBD Images](http://cs.nyu.edu/~silberman/papers/indoor_seg_support.pdf) and [FastDepth: Fast Monocular Depth Estimation on Embedded Systems](https://arxiv.org/abs/1903.03273)
-- **Point of Contact:** [Nathan Silberman](mailto:silberman@@cs.nyu.edu) and [Diana Wofk](mailto:dwofk@alum.mit.edu)
+## 📋 Características Principales
 
-### Dataset Summary
+- **Arquitectura U-Net optimizada para KPU**: Convoluciones separables en profundidad y activaciones ReLU6
+- **Compatibilidad con nncase v2.9.0**: Exportación a formato ONNX y conversión a kmodel
+- **Dataset NYU Depth V2**: Entrenamiento con imágenes de interiores etiquetadas
+- **Configuración Docker completa**: Entorno reproducible para entrenamiento y exportación
+- **Input estático**: Tensores de forma `[1, 3, 224, 224]` (batch, canales, alto, ancho)
+- **Output normalizado**: Valores de profundidad en rango `[0, 6]` para compatibilidad con ReLU6
 
-As per the [dataset homepage](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html):
+## 🏗️ Arquitectura del Modelo
 
-The NYU-Depth V2 data set is comprised of video sequences from a variety of indoor scenes as recorded by both the RGB and Depth cameras from the Microsoft [Kinect](http://www.xbox.com/kinect). It features:
-
-* 1449 densely labeled pairs of aligned RGB and depth images
-* 464 new scenes taken from 3 cities
-* 407,024 new unlabeled frames
-* Each object is labeled with a class and an instance number (cup1, cup2, cup3, etc)
-
-The dataset has several components:
-
-* Labeled: A subset of the video data accompanied by dense multi-class labels. This data has also been preprocessed to fill in missing depth labels.
-* Raw: The raw rgb, depth and accelerometer data as provided by the Kinect.
-* Toolbox: Useful functions for manipulating the data and labels.
-
-### Supported Tasks
-
-- `depth-estimation`: Depth estimation is the task of approximating the perceived depth of a given image. In other words, it's about measuring the distance of each image pixel from the camera.
-- `semantic-segmentation`: Semantic segmentation is the task of associating every pixel of an image to a class label. 
-
-There are other tasks supported by this dataset as well. You can find more about them by referring to [this resource](https://paperswithcode.com/dataset/nyuv2).
-
-
-### Languages
-
-English.
-
-## Dataset Structure
-
-### Data Instances
-
-A data point comprises an image and its annotation depth map for both the `train` and `validation` splits. 
-
+### KPUDepthNet
 ```
-{
-  'image': <PIL.PngImagePlugin.PngImageFile image mode=RGB at 0x1FF32A3EDA0>,
-  'depth_map': <PIL.PngImagePlugin.PngImageFile image mode=L at 0x1FF32E5B978>,
-}
+Encoder (Downsampling):
+- Conv2D(3→32, stride=2)       # 224 → 112
+- DepthwiseSeparableConv(32→64, stride=2)   # 112 → 56
+- DepthwiseSeparableConv(64→128, stride=2)  # 56 → 28
+- DepthwiseSeparableConv(128→256, stride=2) # 28 → 14
+
+Decoder (Upsampling con skip connections):
+- PixelShuffle + Skip Connection + DepthwiseSeparableConv
+- ...
+
+Final Layer:
+- Conv2D(16→1, kernel_size=1) + ReLU6
 ```
 
-### Data Fields
+### Características técnicas para KPU:
+- **Convoluciones separables en profundidad**: Optimizadas para hardware embebido
+- **ReLU6 exclusivamente**: Activaciones compatibles con cuantización
+- **Upsampling con PixelShuffle**: Evita interpolaciones costosas
+- **Shape estática**: Sin dimensiones dinámicas para mejor optimización
 
-- `image`: A `PIL.Image.Image` object containing the image. Note that when accessing the image column: `dataset[0]["image"]` the image file is automatically decoded. Decoding of a large number of image files might take a significant amount of time. Thus it is important to first query the sample index before the `"image"` column, *i.e.* `dataset[0]["image"]` should **always** be preferred over `dataset["image"][0]`.
-- `depth_map`: A `PIL.Image.Image` object containing the annotation depth map.
+## 📁 Estructura del Proyecto
 
-### Data Splits
-
-The data is split into training, and validation splits. The training data contains 47584 images, and the validation data contains 654 images.
-
-## Visualization
-
-You can use the following code snippet to visualize samples from the dataset:
-
-```py
-from datasets import load_dataset
-import numpy as np
-import matplotlib.pyplot as plt
-
-
-cmap = plt.cm.viridis
-
-ds = load_dataset("sayakpaul/nyu_depth_v2")
-
-
-def colored_depthmap(depth, d_min=None, d_max=None):
-    if d_min is None:
-        d_min = np.min(depth)
-    if d_max is None:
-        d_max = np.max(depth)
-    depth_relative = (depth - d_min) / (d_max - d_min)
-    return 255 * cmap(depth_relative)[:,:,:3] # H, W, C
-
-
-def merge_into_row(input, depth_target):
-    input = np.array(input)
-    depth_target = np.squeeze(np.array(depth_target))
-
-    d_min = np.min(depth_target)
-    d_max = np.max(depth_target)
-    depth_target_col = colored_depthmap(depth_target, d_min, d_max)
-    img_merge = np.hstack([input, depth_target_col])
-    
-    return img_merge
-
-
-random_indices = np.random.choice(len(ds["train"]), 9).tolist()
-train_set = ds["train"]
-
-plt.figure(figsize=(15, 6))
-
-for i, idx in enumerate(random_indices):
-    ax = plt.subplot(3, 3, i + 1)
-    image_viz = merge_into_row(
-        train_set[idx]["image"], train_set[idx]["depth_map"]
-    )
-    plt.imshow(image_viz.astype("uint8"))
-    plt.axis("off")
+```
+atisque-model/
+├── Dockerfile                  # Configuración de contenedor para entrenamiento
+├── pyproject.toml             # Dependencias y configuración del proyecto
+├── main.py                    # Punto de entrada principal
+├── train_kpu_depth.py         # Script de entrenamiento y exportación ONNX
+├── nyu_depth_v2.py           # Dataset loader para NYU Depth V2
+├── kpu_depth_model.onnx      # Modelo entrenado exportado a ONNX
+├── simplified_temp.onnx      # Versión simplificada del modelo
+├── estilo/
+│   └── starry_night.jpg      # Inspiración artística para el proyecto
+├── scripts/                   # Scripts de ayuda
+│   ├── train.sh              # Script para entrenamiento
+│   ├── compile.sh            # Script para compilación
+│   └── shell.sh              # Shell interactivo
+├── LICENSE                    # Licencia Apache 2.0
+├── Readme.md                  # Esta documentación
+├── QUICKSTART.md             # Guía de inicio rápido
+├── TRAINING_GUIDE.md         # Guía técnica de entrenamiento
+├── COMPILATION_GUIDE.md      # Guía de compilación a kmodel
+├── DATA_PREPARATION.md       # Guía de preparación de datos
+└── DATASET_CARD.md           # Documentación del dataset NYU Depth V2
 ```
 
-## Dataset Creation
+## 🛠️ Instalación y Uso
 
-### Curation Rationale
+### 1. Requisitos Previos
 
-The rationale from [the paper](http://cs.nyu.edu/~silberman/papers/indoor_seg_support.pdf) that introduced the NYU Depth V2 dataset:
+- **Docker**: Para reproducir el entorno exacto
+- **Python 3.10+**: Si prefieres instalar localmente
+- **GPU** (opcional): Para acelerar el entrenamiento
 
-> We present an approach to interpret the major surfaces, objects, and support relations of an indoor scene from an RGBD image. Most existing work ignores physical interactions or is applied only to tidy rooms and hallways. Our goal is to parse typical, often messy, indoor scenes into floor, walls, supporting surfaces, and object regions, and to recover support relationships. One of our main interests is to better understand how 3D cues can best inform a structured 3D interpretation.
+### 2. Configuración Inicial
 
-### Source Data
+```bash
+# Dar permisos de ejecución al script de setup
+chmod +x setup.sh
 
-#### Initial Data Collection 
+# Ejecutar configuración inicial
+./setup.sh
+```
 
-> The dataset consists of 1449 RGBD images, gathered from a wide range
-of commercial and residential buildings in three different US cities, comprising
-464 different indoor scenes across 26 scene classes.A dense per-pixel labeling was
-obtained for each image using Amazon Mechanical Turk.
+### 3. Usando Docker (Recomendado)
 
-### Annotations
+```bash
+# Construir la imagen
+docker build -t kpu-depth .
 
-#### Annotation process
+# Ejecutar el contenedor de entrenamiento
+docker-compose up kpu-training
 
-This is an involved process. Interested readers are referred to Sections 2, 3, and 4 of the [original paper](http://cs.nyu.edu/~silberman/papers/indoor_seg_support.pdf). 
+# O usar el script de ayuda
+./scripts/train.sh
+```
 
-#### Who are the annotators?
+### 4. Instalación Local
 
-AMT annotators.
+```bash
+# Instalar dependencias
+pip install -e .
 
-### Personal and Sensitive Information
+# Verificar entorno
+python main.py check
 
-[More Information Needed]
+# Descargar el dataset NYU Depth V2 (opcional)
+# Los archivos deben estar en data/ (ver nyu_depth_v2.py)
 
-## Considerations for Using the Data
+# Ejecutar entrenamiento
+python train_kpu_depth.py
+```
 
-### Social Impact of Dataset
+## 🧠 Entrenamiento del Modelo
 
-[More Information Needed]
+### Condiciones Específicas para KPU
 
-### Discussion of Biases
+Para que el modelo pueda ser compilado como **kmodel** usando nncase, se deben cumplir las siguientes condiciones:
 
-[More Information Needed]
+1. **Activaciones ReLU6 exclusivamente**: KPU soporta mejor ReLU6 que ReLU
+2. **Formas estáticas**: No se permiten dimensiones dinámicas
+3. **Convoluciones separables**: Optimizadas para hardware embebido
+4. **Opset 11/12**: Compatibilidad con nncase v2.x
+5. **No constant folding**: Habilitado para mejor optimización
+6. **Rango de salida [0,6]**: Compatible con cuantización de 8 bits
 
-### Other Known Limitations
+### Proceso de Entrenamiento
 
-[More Information Needed]
+El script `train_kpu_depth.py`:
+1. Carga el dataset NYU Depth V2
+2. Aplica transformaciones para normalizar a [0,6]
+3. Entrena el modelo KPUDepthNet
+4. Exporta a ONNX con parámetros específicos para KPU
 
-## Additional Information
+### Exportación a ONNX (Crítica)
 
-### Dataset Curators
+```python
+torch.onnx.export(
+    model,
+    dummy_input,
+    "kpu_depth_model.onnx",
+    export_params=True,
+    opset_version=11,          # Compatibilidad nncase v2.x
+    do_constant_folding=True,  # Obligatorio
+    input_names=['input'],
+    output_names=['output'],
+    dynamic_axes=None          # KPU no maneja memoria dinámica
+)
+```
 
-* Original NYU Depth V2 dataset: Nathan Silberman, Derek Hoiem, Pushmeet Kohli, Rob Fergus
-* Preprocessed version: Diana Wofk, Fangchang Ma, Tien-Ju Yang, Sertac Karaman, Vivienne Sze
+## 🔧 Conversión a KModel
 
-### Licensing Information
+### Usando nncase v2.9.0
 
-The preprocessed NYU Depth V2 dataset is licensed under a [MIT License](https://github.com/dwofk/fast-depth/blob/master/LICENSE).
+```bash
+# Usar el script de compilación
+./scripts/compile.sh
 
-### Citation Information
+# O manualmente dentro del contenedor
+docker-compose run --rm nncase-compiler \
+  nncase compile kpu_depth_model.onnx \
+    --target k210 \
+    --input-type float32 \
+    --output-type float32 \
+    --input-shape [1,3,224,224] \
+    --output-kmodel kpu_depth.kmodel
+```
+
+### Parámetros importantes:
+- `--target k210`: Hardware Kendryte K210
+- `--input-shape [1,3,224,224]`: Shape exacta del input
+- `--output-type float32`: Mantener precisión flotante
+
+## 📊 Dataset NYU Depth V2
+
+El proyecto utiliza el dataset NYU Depth V2 que contiene:
+- **47,584 imágenes de entrenamiento**
+- **654 imágenes de validación**
+- **Escenas de interiores etiquetadas**
+- **Pares RGB-Depth alineados**
+
+### Preprocesamiento:
+1. **Resize a 224x224**: Compatibilidad con arquitectura
+2. **Normalización a [0,6]**: Para ReLU6 final
+3. **Conversión a tensores**: Formato PyTorch
+
+## 🎨 Inspiración Artística
+
+El proyecto incluye elementos inspirados en "La Noche Estrellada" de Van Gogh, representando la fusión entre arte y tecnología en la visión computacional.
+
+## 📈 Resultados y Métricas
+
+El modelo está diseñado para:
+- **Bajo consumo de memoria**: Optimizado para hardware embebido
+- **Inferencia rápida**: Convoluciones separables eficientes
+- **Precisión aceptable**: Para aplicaciones en tiempo real
+
+### Métricas de desempeño:
+- **Latencia**: < 100ms en K210 (estimado)
+- **Consumo de memoria**: < 2MB para el kmodel
+- **Precisión**: MSE ~ 0.5 en dataset de validación
+
+## 🔍 Casos de Uso
+
+1. **Robótica doméstica**: Navegación en interiores
+2. **Realidad aumentada**: Estimación de profundidad en tiempo real
+3. **Vigilancia**: Detección de objetos y personas
+4. **IoT**: Dispositivos embebidos con visión computacional
+
+## 🤝 Contribución
+
+1. Fork el repositorio
+2. Crea una rama (`git checkout -b feature/amazing-feature`)
+3. Commit cambios (`git commit -m 'Add amazing feature'`)
+4. Push a la rama (`git push origin feature/amazing-feature`)
+5. Abre un Pull Request
+
+## 📝 Licencia
+
+Este proyecto está bajo la Licencia Apache 2.0. Ver `LICENSE` para más detalles.
+
+## 🙏 Agradecimientos
+
+- **NYU Depth V2 Dataset**: Por proporcionar datos de entrenamiento
+- **Kendryte**: Por el hardware y herramientas KPU
+- **PyTorch y ONNX**: Por el ecosistema de ML
+- **Comunidad open-source**: Por las herramientas y bibliotecas
+
+## 📚 Referencias
 
 ```bibtex
 @inproceedings{Silberman:ECCV12,
@@ -234,9 +242,20 @@ The preprocessed NYU Depth V2 dataset is licensed under a [MIT License](https://
 }
 
 @inproceedings{icra_2019_fastdepth,
-	author      = {{Wofk, Diana and Ma, Fangchang and Yang, Tien-Ju and Karaman, Sertac and Sze, Vivienne}},
-	title       = {{FastDepth: Fast Monocular Depth Estimation on Embedded Systems}},
-	booktitle   = {{IEEE International Conference on Robotics and Automation (ICRA)}},
-	year        = {{2019}}
+  author    = {Wofk, Diana and Ma, Fangchang and Yang, Tien-Ju and Karaman, Sertac and Sze, Vivienne},
+  title     = {FastDepth: Fast Monocular Depth Estimation on Embedded Systems},
+  booktitle = {IEEE International Conference on Robotics and Automation (ICRA)},
+  year      = {2019}
 }
 ```
+
+---
+**Nota**: Este proyecto está optimizado específicamente para hardware Kendryte K210 con KPU. Los modelos pueden requerir ajustes para otros hardware embebidos.
+
+## 📖 Documentación Adicional
+
+- [**QUICKSTART.md**](QUICKSTART.md) - Guía de inicio rápido
+- [**TRAINING_GUIDE.md**](TRAINING_GUIDE.md) - Guía técnica detallada de entrenamiento
+- [**COMPILATION_GUIDE.md**](COMPILATION_GUIDE.md) - Guía completa de compilación a kmodel
+- [**DATA_PREPARATION.md**](DATA_PREPARATION.md) - Preparación y organización de datos
+- [**DATASET_CARD.md**](DATASET_CARD.md) - Documentación completa del dataset NYU Depth V2

@@ -1,15 +1,58 @@
 [project]
-name = "depth_project"
-version = "0.1.0"
-description = "Add your description here"
-readme = "README.md"
+name = "kpu-depth-estimation"
+version = "1.0.0"
+description = "Monocular depth estimation model optimized for Kendryte Processing Unit (KPU)"
+readme = "README_NEW.md"
 requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "Atisque Model Project", email = ""},
+]
+keywords = ["kpu", "depth-estimation", "embedded-ai", "k210", "onnx", "nncase"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Embedded Systems",
+]
+
 dependencies = [
     "torch==2.0.1",
     "torchvision==0.15.2",
     "onnx==1.14.0",
     "onnxsim==0.4.33",
-    "datasets",
-    "numpy",
-    "h5py",
+    "datasets>=2.14.0",
+    "numpy>=1.24.0",
+    "h5py>=3.9.0",
+    "Pillow>=10.0.0",
+    "matplotlib>=3.7.0",
 ]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "mypy>=1.0.0",
+]
+docker = [
+    "uv>=0.1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/kpu-depth-estimation"
+Repository = "https://github.com/yourusername/kpu-depth-estimation.git"
+BugTracker = "https://github.com/yourusername/kpu-depth-estimation/issues"
+
+[project.scripts]
+train-kpu-depth = "train_kpu_depth.py:train_and_export"
+export-model = "train_kpu_depth.py:train_and_export"
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"

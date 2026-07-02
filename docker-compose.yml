@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  kpu-training:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kpu-depth-training
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./scripts:/app/scripts
+    working_dir: /app
+    environment:
+      - NNCASE_PLUGIN_PATH=/usr/local/lib/python3.10/site-packages/nncase_kpu
+      - PYTHONPATH=/app
+      - CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-}
+    command: >
+      bash -c "
+      echo 'Instalando dependencias del proyecto...' &&
+      pip install -e . &&
+      echo 'Verificando dataset...' &&
+      if [ -d '/app/data' ] && [ -n \"$(ls -A /app/data 2>/dev/null)\" ]; then
+        echo 'Dataset encontrado, iniciando entrenamiento...' &&
+        python train_kpu_depth.py
+      else
+        echo 'Dataset no encontrado o vacío.' &&
+        echo 'Por favor, descarga el dataset NYU Depth V2:' &&
+        echo '1. Visita https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html' &&
+        echo '2. Descarga los archivos train-*.tar y val-*.tar' &&
+        echo '3. Colócalos en la carpeta ./data/' &&
+        echo '' &&
+        echo 'Mientras tanto, ejecutando demo con datos dummy...' &&
+        python train_kpu_depth.py
+      fi
+      "
+    restart: no
+    tty: true
+    stdin_open: true
+
+  nncase-compiler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nncase-compiler
+    volumes:
+      - ./models:/app/models
+      - ./scripts:/app/scripts
+    working_dir: /app
+    environment:
+      - NNCASE_PLUGIN_PATH=/usr/local/lib/python3.10/site-packages/nncase_kpu
+    command: >
+      bash -c "
+      echo 'Instalando dependencias del proyecto...' &&
+      pip install -e . &&
+      echo '' &&
+      echo 'Herramientas disponibles:' &&
+      echo '  nncase --help          - Ver ayuda de nncase' &&
+      echo '  nncase compile         - Compilar modelo ONNX a kmodel' &&
+      echo '  nncase infer           - Ejecutar inferencia con kmodel' &&
+      echo '' &&
+      echo 'Para compilar un modelo:' &&
+      echo '  nncase compile models/kpu_depth_model.onnx \' &&
+      echo '    --target k210 \' &&
+      echo '    --input-type float32 \' &&
+      echo '    --output-type float32 \' &&
+      echo '    --input-shape [1,3,224,224] \' &&
+      echo '    --output-kmodel models/kpu_depth.kmodel' &&
+      echo '' &&
+      echo 'Para ejecutar inferencia:' &&
+      echo '  nncase infer models/kpu_depth.kmodel \' &&
+      echo '    --dataset data/calibration/ \' &&
+      echo '    --output results/' &&
+      echo '' &&
+      bash
+      "
+    restart: no
+    tty: true
+    stdin_open: true
+
+volumes:
+  data:
+    driver: local
+  models:
+    driver: local
+  scripts:
+    driver: local

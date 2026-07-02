@@ -1,12 +1,119 @@
-# Python-generated files
+# Python
 __pycache__/
-*.py[oc]
+*.py[cod]
+*$py.class
+*.so
+.Python
 build/
+develop-eggs/
 dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
 wheels/
-train/
-val/
-*.egg-info
+*.egg-info/
+.installed.cfg
+*.egg
 
-# Virtual environments
+# Virtual Environment
+.env
 .venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Dataset files (large)
+data/
+!data/.gitkeep
+
+# Model files (large)
+*.onnx
+*.kmodel
+*.pth
+*.pt
+*.bin
+
+# Training outputs
+checkpoints/
+runs/
+logs/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Test outputs
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+.hypothesis/
+
+# Profiling
+.prof
+
+# Results
+results/
+!results/.gitkeep
+
+# Temporary files
+tmp/
+temp/
+
+# Specific to this project
+kpu_depth_model.onnx
+simplified_temp.onnx
+uv.lock
+
+# Calibration data
+calibration/
+
+# Local development
+local.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Documentation
+_site/
+.sass-cache/
+.jekyll-cache/
+.jekyll-metadata
+
+# Package managers
+node_modules/
+yarn.lock
+package-lock.json
+pnpm-lock.yaml
+
+# Windows
+[Dd]esktop.ini
+
+# End of .gitignore
